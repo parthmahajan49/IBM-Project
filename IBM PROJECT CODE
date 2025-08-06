@@ -1,0 +1,60 @@
+import openai
+import requests
+
+# ====== CONFIGURATION ======
+OPENAI_API_KEY = "YOUR_OPENAI_API_KEY"
+WEATHER_API_KEY = "YOUR_OPENWEATHERMAP_API_KEY"
+
+openai.api_key = OPENAI_API_KEY
+
+# ====== GET WEATHER FUNCTION ======
+def get_weather(city):
+    try:
+        url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_API_KEY}&units=metric"
+        response = requests.get(url).json()
+        if response.get("cod") != 200:
+            return f"Weather info not found for {city}."
+        temp = response["main"]["temp"]
+        desc = response["weather"][0]["description"]
+        return f"Weather in {city}: {temp}°C, {desc}."
+    except Exception as e:
+        return f"Error fetching weather: {e}"
+
+# ====== AI RESPONSE FUNCTION ======
+def travel_agent_response(prompt):
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4o-mini",  # Use gpt-4o if you have access
+            messages=[
+                {"role": "system", "content": "You are a helpful travel planner assistant."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return response["choices"][0]["message"]["content"]
+    except Exception as e:
+        return f"Error generating AI response: {e}"
+
+# ====== MAIN AGENT FUNCTION ======
+def travel_planner():
+    print("🌍 Welcome to the AI Travel Planner Agent!")
+    destination = input("Enter your destination city: ")
+    days = input("How many days will you travel? ")
+    budget = input("What is your budget in USD? ")
+
+    # Get weather
+    weather_info = get_weather(destination)
+
+    # Ask AI for suggestions
+    ai_prompt = f"""
+    Plan a {days}-day trip to {destination} with a budget of {budget} USD.
+    Include travel tips, itinerary, and transport recommendations.
+    """
+    ai_plan = travel_agent_response(ai_prompt)
+
+    print("\n===== Travel Plan =====")
+    print(weather_info)
+    print(ai_plan)
+
+# ====== RUN AGENT ======
+if __name__ == "__main__":
+    travel_planner()
